@@ -1,6 +1,6 @@
 """App initialisation logic"""
 from flask import Flask
-from app.routes import router
+from chat_core.routes import router
 
 
 def create_app():
