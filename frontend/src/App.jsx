@@ -14,6 +14,7 @@ function App() {
           <Route path="/" element={<Overview/>}/>
           <Route path="/new" element={<NewChatbot/>}/>
           <Route path="/chatbots" element={<Chatbots/>}/>
+          <Route path="/chat/:chatbotId" element={<ChatWidget />} />
         </Routes>
       </Navbar>
     </Router>
