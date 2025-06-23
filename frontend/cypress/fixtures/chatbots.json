@@ -1,0 +1,20 @@
+[
+  {
+    "id": "bot1",
+    "name": "ChatBot Alpha",
+    "description": "A sample chatbot",
+    "deployment_url": "",
+    "created_at": "2024-01-01T00:00:00Z",
+    "last_trained_at": "2024-01-02T00:00:00Z",
+    "status": "trained"
+  },
+  {
+    "id": "bot2",
+    "name": "ChatBot Beta",
+    "description": "Another bot",
+    "deployment_url": "",
+    "created_at": "2024-01-03T00:00:00Z",
+    "last_trained_at": "2024-01-04T00:00:00Z",
+    "status": "active"
+  }
+]

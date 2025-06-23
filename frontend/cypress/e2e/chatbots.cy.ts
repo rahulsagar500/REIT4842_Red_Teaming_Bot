@@ -2,19 +2,11 @@
 
 describe('Chatbots Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/chatbots', {
-      statusCode: 200,
-      body: [
-        {
-          id: 'bot1',
-          name: 'ChatBot Alpha',
-          description: 'Test bot',
-          deployment_url: '',
-          created_at: new Date().toISOString(),
-          last_trained_at: new Date().toISOString(),
-          status: 'trained',
-        },
-      ],
+    cy.fixture('chatbots.json').then((chatbots) => {
+      cy.intercept('GET', '/chatbots', {
+        statusCode: 200,
+        body: chatbots,
+      }).as('getChatbots');
     });
 
     cy.visit('/chatbots');
@@ -33,10 +25,11 @@ describe('Chatbots Page', () => {
     cy.intercept('POST', '/chatbots/bot1/deploy', { statusCode: 200 }).as('deploy');
 
     cy.window().then((win) => cy.stub(win, 'alert').as('alert'));
+
     cy.contains('Humpi').click();
-    cy.get('@alert').should('be.calledWithMatch', /Chatbot bot1 sent to humpi/);
+    cy.get('@alert').should('have.been.calledWithMatch', /Chatbot bot1 sent to humpi/);
 
     cy.contains('Humpa').click();
-    cy.get('@alert').should('be.calledWithMatch', /Chatbot bot1 sent to humpa/);
+    cy.get('@alert').should('have.been.calledWithMatch', /Chatbot bot1 sent to humpa/);
   });
 });
