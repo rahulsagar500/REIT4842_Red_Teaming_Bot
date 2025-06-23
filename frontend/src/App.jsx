@@ -4,7 +4,7 @@ import {BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar';
 import Overview from './pages/Overview';
 import NewChatbot from './pages/NewChatbot';
-import NewChatbot from './pages/Chatbots';
+import Chatbots from './pages/Chatbots';
 
 function App() {
   return (

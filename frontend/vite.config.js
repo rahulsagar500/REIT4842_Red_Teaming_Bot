@@ -15,4 +15,8 @@ export default defineConfig({
       },
     },
   },
+  hmr: {
+    overlay: false,  // Disable the full-screen red error overlay
+  },
 });
+
