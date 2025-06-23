@@ -9,10 +9,11 @@ Use `Base.metadata.create_all(engine)` to initialize tables.
 """
 import uuid
 import enum
-from sqlalchemy import Column, String, Float, Text, JSON, TIMESTAMP, Enum as SQLAlchemyEnum
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, String, Text, TIMESTAMP, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -53,11 +54,30 @@ class Chatbots(Base):
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     deployment_url = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    last_trained_at = Column(TIMESTAMP, server_default=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+    last_trained_at = Column(
+        TIMESTAMP(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
     status = Column(SQLAlchemyEnum(StatusEnum, name="status_enum"), nullable=False)
 
     def to_dict(self):
+        """
+        Convert the Chatbot ORM object to a serializable dictionary.
+
+        Returns:
+            dict: A dictionary representation of the chatbot instance, including:
+                - id (str)
+                - name (str)
+                - description (str or None)
+                - deployment_url (str or None)
+                - created_at (str in ISO format or None)
+                - last_trained_at (str in ISO format or None)
+                - status (str)
+        """
         return {
             "id": str(self.id),
             "name": self.name,

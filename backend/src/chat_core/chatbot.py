@@ -1,13 +1,29 @@
-"""Chatbot Deployment logic"""
+"""
+Chatbot Deployment Logic
+
+This module defines the ChatbotEngine class, responsible for training
+and serving responses using a simple retrieval-based approach. It leverages
+FAISS for similarity search over embedded user inputs and LangChain's schema.
+
+Classes
+-------
+ChatbotEngine
+    Loads a dataset, builds a vector store, and responds to user queries
+    by retrieving the most relevant example from the dataset.
+"""
+from typing import List
+
 from langchain.vectorstores import FAISS
 from langchain.schema import Document
 
 from core.utils.clients import ModelClient
 from core.commons.storage.database.loader import load_dataset
 
-from typing import List
 
 class ChatbotEngine:
+    """
+    Engine for training and responding to user queries using FAISS vector search.
+    """
     def __init__(self):
         self.client = ModelClient.load()
         self.embedding_model = self.client.get_embeddings()

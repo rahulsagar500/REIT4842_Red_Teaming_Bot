@@ -5,7 +5,7 @@ description = ""
 authors = ["RAHUL SAGAR PABBA <rahulsagarpabba5@gmail.com>"]
 readme = "README.md"
 packages = [
-    { include = "app", from = "src" }
+  { include = "chat_core", from = "src" }
 ]
 
 [tool.poetry.dependencies]
@@ -13,6 +13,7 @@ python = ">=3.13,<4.0"
 transformers = ">=4.52.4,<5.0.0"
 scikit-learn = ">=1.7.0,<2.0.0"
 ragas-red-team = { path = "../../backend", develop = true }
+flask = "^3.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

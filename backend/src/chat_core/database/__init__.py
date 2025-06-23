@@ -1,5 +1,31 @@
-import pandas as pd
+"""
+storage.database.sql_storage
+
+Provides a concrete implementation of the DataStorage interface using SQLAlchemy ORM
+for PostgreSQL backends, with support for automatic database creation, schema definition,
+and ORM-integrated CRUD operations.
+
+Key Features:
+- Automatic PostgreSQL database creation (if it doesn't exist)
+- ORM table setup from Base.metadata
+- Insertion and fetching of records via SQLAlchemy ORM or raw SQL
+- Conversion of pandas DataFrames to ORM model instances
+- Built-in support for Enums and UUIDs
+- Safe deletion and update operations
+
+Dependencies:
+- psycopg2
+- SQLAlchemy
+- pandas
+- PostgreSQL
+
+Usage:
+    from core.commons.storage.database.sql_storage import Storage
+    storage = Storage(PG_CONFIG)
+    storage.insert(df, name="example", orm_class=ExampleModel)
+"""
 from uuid import UUID
+import pandas as pd
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -53,15 +79,15 @@ class Storage(DataStorage):
 
             cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
             if not cur.fetchone():
-                cur.execute(f'CREATE DATABASE "{db_name}"')
-                logger.info(f"✅ Created database '{db_name}'")
+                cur.execute('CREATE DATABASE "%s"', db_name)
+                logger.info("✅ Created database '%s'", db_name)
             else:
-                logger.info(f"ℹ️ Database '{db_name}' already exists.")
+                logger.info("ℹ️ Database '%s' already exists.", db_name)
 
             cur.close()
             temp_conn.close()
         except Exception as e:
-            logger.error(f"❌ Database creation failed: {e}")
+            logger.error("❌ Database creation failed: %s", e)
             raise
 
         db_url = URL.create(
@@ -73,7 +99,7 @@ class Storage(DataStorage):
             database=config["database"],
         )
         self.engine = create_engine(db_url, echo=False, future=True)
-        self.Session = scoped_session(sessionmaker(
+        self.session = scoped_session(sessionmaker(
             bind=self.engine,
             autoflush=False,
             autocommit=False,
@@ -84,7 +110,7 @@ class Storage(DataStorage):
             Base.metadata.create_all(self.engine)
             logger.info("✅ ORM tables created (if not existing).")
         except Exception as e:
-            logger.error(f"❌ Table creation failed: {e}")
+            logger.error("❌ Table creation failed: %s", e)
             raise
 
     def define_schema(self, df, name, overwrite=False):
@@ -139,7 +165,7 @@ class Storage(DataStorage):
             return
         try:
             records = self.df_to_orm(df, orm_class, fixed_fields or {})
-            with self.Session() as session:
+            with self.session() as session:
                 session.add_all(records)
                 session.commit()
                 logger.info("[INSERT ORM] %d rows inserted into '%s'.", len(records), name)
@@ -180,7 +206,7 @@ class Storage(DataStorage):
         """
         try:
             if orm_class:
-                with self.Session() as session:
+                with self.session() as session:
                     query = session.query(orm_class)
                     if join_model:
                         query = query.join(join_model)
@@ -188,7 +214,11 @@ class Storage(DataStorage):
                         for attr, value in filters.items():
                             query = query.filter(getattr(orm_class, attr) == value)
                     results = query.all()
-                    logger.info("[FETCH ORM] %d records fetched from '%s'.", len(results), orm_class.__tablename__)
+                    logger.info(
+                        "[FETCH ORM] %d records fetched from '%s'.",
+                        len(results),
+                        orm_class.__tablename__
+                    )
                     return results if as_orm else pd.DataFrame([r.to_dict() for r in results])
             else:
                 query = f"SELECT * FROM {name}" + (f" WHERE {where_clause}" if where_clause else "")
@@ -209,8 +239,12 @@ class Storage(DataStorage):
                     row_data = row.dropna().to_dict()
                     if key_column not in row_data:
                         continue
-                    set_clause = ", ".join(f"{col} = :{col}" for col in row_data if col != key_column)
-                    query = text(f"UPDATE {name} SET {set_clause} WHERE {key_column} = :{key_column}")
+                    set_clause = ", ".join(
+                        f"{col} = :{col}" for col in row_data if col != key_column
+                    )
+                    query = text(
+                        f"UPDATE {name} SET {set_clause} WHERE {key_column} = :{key_column}"
+                    )
                     conn.execute(query, row_data)
             logger.info("[UPDATE] Updated %d rows in '%s'.", len(df), name)
         except SQLAlchemyError as e:
@@ -278,7 +312,7 @@ class Storage(DataStorage):
                     try:
                         row_data[key] = UUID(value)
                     except ValueError:
-                        logger.warning(f"Invalid UUID in column '{key}': {value}")
+                        logger.warning("Invalid UUID in column '%s': %s", key, value)
                         continue
 
                 # Enum conversion
@@ -287,15 +321,13 @@ class Storage(DataStorage):
                     try:
                         row_data[key] = enum_cls(value)
                     except ValueError:
-                        logger.warning(f"Invalid enum value for column '{key}': {value}")
+                        logger.warning("Invalid enum value for column '%s': %s", key, value)
                         continue
 
             try:
                 instance = orm_class(**{**row_data, **fixed_fields})
                 instances.append(instance)
             except Exception as e:
-                logger.warning(f"Skipping row due to insert error: {e}")
+                logger.warning("Skipping row due to insert error: %s", e)
 
         return instances
-
-
